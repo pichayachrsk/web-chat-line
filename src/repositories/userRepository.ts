@@ -11,12 +11,19 @@ export class UserRepository {
       displayName: displayName || "User",
     };
 
+    if (isGenericName) {
+      return db
+        .insert(users)
+        .values(dataToInsert)
+        .onConflictDoNothing();
+    }
+
     return db
       .insert(users)
       .values(dataToInsert)
       .onConflictDoUpdate({
         target: users.userId,
-        set: !isGenericName ? { displayName } : {},
+        set: { displayName },
       });
   }
 

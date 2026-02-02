@@ -2,6 +2,8 @@
 
 A comprehensive chat management system for LINE Official Account (OA) that supports both Admin Console and User Simulation (User Mode) in a single interface. Built with Next.js, Drizzle ORM, and LINE Messaging API.
 
+**Live Demo:** [https://web-chat-line.vercel.app/](https://web-chat-line.vercel.app/)
+
 ## Key Features
 
 - **Real-time Synchronization**: Powered by Server-Sent Events (SSE) to keep messages in sync across devices without polling.
