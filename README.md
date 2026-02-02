@@ -83,8 +83,6 @@ Visit [http://localhost:3000](http://localhost:3000) to access the console.
 
 ## Idea for Architecture: Performance & Scalability
 
-This project is built on a **Serverless-native architecture**, addressing the unique challenges of building real-time applications without a persistent stateful server.
-
 ### 1. Client-side Polling (Current)
 - **Problem**: Vercel Serverless Functions are isolated; Instance A (Webhook) cannot notify Instance B (Dashboard) in memory.
 - **Solution**: Use Client-side Polling. Every new message is written to the DB by the Webhook, and the Admin Dashboard fetches updates every 2 seconds.
