@@ -7,6 +7,7 @@ A comprehensive chat management system for LINE Official Account (OA) that suppo
 ## Key Features
 
 - **Real-time Synchronization**: Powered by Server-Sent Events (SSE) to keep messages in sync across devices without polling.
+- **Responsive Design**: Fully optimized for mobile, tablet, and desktop viewing with an adaptive layout.
 - **Dual Simulation Mode**:
   - **Admin Mode**: Full administrator console to manage active chats and reply via LINE Messaging API.
   - **User Mode**: Developer-friendly simulation to act as any user (configurable via `LINE_USER_ID`) for testing end-to-end flows.
