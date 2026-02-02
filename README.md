@@ -4,7 +4,7 @@ A real-time chat management system for LINE Official Account (OA) designed for a
 
 ## Key Features
 
-- **Real-time Synchronization**: Powered by Server-Sent Events (SSE) to keep messages in sync across the dashboard instantly.
+- **Real-time Synchronization**: Powered by Client-side Polling to keep messages in sync across the dashboard.
 - **Admin Dashboard**: A clean interface to manage active chats, view message history, and send real-time replies.
 - **Direct Messaging**: Sends authentic Push Messages via the LINE Messaging API to users' devices.
 - **Automated Profile Fetching**: Automatically retrieves user display names and profiles from the LINE Platform when they message the account.
@@ -16,9 +16,9 @@ A real-time chat management system for LINE Official Account (OA) designed for a
 - **Framework**: [Next.js 15+](https://nextjs.org/) (App Router)
 - **Database**: SQLite / [Turso](https://turso.tech/)
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
-- **UI & Styling**: Tailwind CSS & Headless UI
+- **UI & Styling**: Tailwind CSS
 - **API**: [LINE Messaging API SDK](https://github.com/line/line-bot-sdk-nodejs)
-- **Real-time**: Server-Sent Events (SSE)
+- **Real-time**: Client-side Polling (2s interval)
 
 ## Getting Started
 
@@ -41,8 +41,7 @@ Create a `.env.local` file in the root directory:
 ```dotenv
 LINE_CHANNEL_ACCESS_TOKEN=your_access_token
 LINE_CHANNEL_SECRET=your_channel_secret
-DATABASE_URL=file:./local.db (or your Turso URL)
-DATABASE_AUTH_TOKEN=your_auth_token (if using Turso)
+DATABASE_URL=file:./drizzle/local.db (or your Turso URL)
 ```
 
 ### 4. Database Setup
@@ -63,7 +62,7 @@ Visit [http://localhost:3000](http://localhost:3000) to access the console.
 
 ## Project Structure
 
-- `src/app/api/`: API Routes for Webhooks, SSE streams, and sending messages.
+- `src/app/api/`: API Routes for Webhooks and sending messages.
 - `src/components/`: UI Components for the chat interface.
 - `src/services/`: Business logic for LINE interactions and message handling.
 - `src/repositories/`: Data access layer using Drizzle.
@@ -78,5 +77,17 @@ Visit [http://localhost:3000](http://localhost:3000) to access the console.
 
 ## Additional Information
 
-- **SSE Stream**: The client connects to `/api/messages/stream` for real-time updates.
+- **Real-time Sync**: The dashboard polls `/api/messages` every 2 seconds to check for new incoming messages from the Webhook.
 - **Administration**: Every message sent from the console is a real Push Message charged against your LINE Messaging API quota.
+
+## Idea for Architecture: Performance & Scalability
+
+This project is built on a **Serverless-native architecture**, addressing the unique challenges of building real-time applications without a persistent stateful server.
+
+### 1. Client-side Polling (Current)
+- **Problem**: Vercel Serverless Functions are isolated; Instance A (Webhook) cannot notify Instance B (Dashboard) in memory.
+- **Solution**: Use Client-side Polling. Every new message is written to the DB by the Webhook, and the Admin Dashboard fetches updates every 2 seconds.
+
+### 2. Scaling to Real-time Efficiency
+As the number of concurrent admin users grows, constant DB polling can increase load.
+- Replace polling with a managed Pub/Sub or Message Broker to distribute workloads more efficiently. For example, Worker A Push notifications , Worker B Write messages to DB etc.

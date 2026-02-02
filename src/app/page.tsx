@@ -86,17 +86,17 @@ export default function Home() {
 
     init();
 
-    const eventSource = new EventSource(API_ROUTES.MESSAGES_STREAM);
-    eventSource.onmessage = (e) => {
+    const interval = setInterval(async () => {
       try {
-        const data = JSON.parse(e.data);
-        if (!data.connected) updateMessagesSafely(data);
+        const res = await axios.get(API_ROUTES.MESSAGES);
+        const newMessages: Message[] = res.data;
+        newMessages.forEach(updateMessagesSafely);
       } catch (err) {
-        console.error("SSE data parse error:", err);
+        console.error("Polling failed:", err);
       }
-    };
+    }, 2000);
 
-    return () => eventSource.close();
+    return () => clearInterval(interval);
   }, []);
 
   const handleSendMessage = async (text: string) => {
