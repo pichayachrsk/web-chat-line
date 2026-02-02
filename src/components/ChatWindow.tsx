@@ -10,7 +10,6 @@ interface ChatWindowProps {
   userId: string;
   onBack: () => void;
   showBack?: boolean;
-  isUserMode?: boolean;
 }
 
 export function ChatWindow({
@@ -19,7 +18,6 @@ export function ChatWindow({
   userId,
   onBack,
   showBack = true,
-  isUserMode = false,
 }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -82,7 +80,7 @@ export function ChatWindow({
           </div>
         ) : (
           messages.map((msg) => (
-            <ChatBubble key={msg.id} message={msg} isUserMode={isUserMode} />
+            <ChatBubble key={msg.id} message={msg} />
           ))
         )}
         <div ref={messagesEndRef} />

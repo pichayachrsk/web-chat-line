@@ -11,8 +11,6 @@ import { API_ROUTES } from "@/config/api";
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [defaultUserId, setDefaultUserId] = useState<string | null>(null);
-  const [isUserMode, setIsUserMode] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
   const users = useMemo(() => {
@@ -44,7 +42,7 @@ export default function Home() {
     });
 
     return Object.values(userMap).sort((a, b) => b.timestamp - a.timestamp);
-  }, [messages, defaultUserId]);
+  }, [messages]);
 
   const activeChatMessages = useMemo(() => {
     if (!selectedUserId) return [];
@@ -77,15 +75,7 @@ export default function Home() {
     const init = async () => {
       setIsLoading(true);
       try {
-        const [configRes, msgRes] = await Promise.all([
-          axios.get(API_ROUTES.CONFIG),
-          axios.get(API_ROUTES.MESSAGES),
-        ]);
-
-        if (configRes.data.defaultUserId) {
-          setDefaultUserId(configRes.data.defaultUserId);
-          setSelectedUserId((prev) => prev || configRes.data.defaultUserId);
-        }
+        const msgRes = await axios.get(API_ROUTES.MESSAGES);
         setMessages(msgRes.data);
       } catch (err) {
         console.error("Initialization failed:", err);
@@ -109,16 +99,6 @@ export default function Home() {
     return () => eventSource.close();
   }, []);
 
-  const toggleMode = () => {
-    setIsUserMode((prev) => {
-      const next = !prev;
-      if (next && defaultUserId) {
-        setSelectedUserId(defaultUserId);
-      }
-      return next;
-    });
-  };
-
   const handleSendMessage = async (text: string) => {
     if (!selectedUserId) return;
 
@@ -127,18 +107,15 @@ export default function Home() {
       id: optimisticId,
       text,
       userId: selectedUserId,
-      sender: isUserMode ? "line" : "user",
+      sender: "user",
       timestamp: Date.now(),
-      displayName: isUserMode ? "You" : "Admin",
+      displayName: "Admin",
     };
 
     setMessages((prev) => [...prev, optimisticMsg]);
 
     try {
-      const endpoint = isUserMode
-        ? API_ROUTES.RECEIVE_MESSAGE
-        : API_ROUTES.SEND_MESSAGE;
-      const res = await axios.post(endpoint, { text, userId: selectedUserId });
+      const res = await axios.post(API_ROUTES.SEND_MESSAGE, { text, userId: selectedUserId });
       if (res.data.message) {
         updateMessagesSafely(res.data.message);
       }
@@ -181,79 +158,61 @@ export default function Home() {
       <header className="bg-green-600 text-white px-4 md:px-6 py-3 md:py-4 shadow-lg z-20 flex items-center justify-between">
         <div>
           <h1 className="text-lg md:text-xl font-bold tracking-tight">
-            {isUserMode ? "User Console" : "Admin Console"}
+            Admin Console
           </h1>
           <p className="text-[9px] md:text-[10px] uppercase tracking-widest opacity-70 font-semibold">
-            CRM System
+            WebChat LINE OA
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-green-700/50 p-1 rounded-lg">
-            <button
-              onClick={() => setIsUserMode(false)}
-              className={`px-3 py-1 rounded text-xs font-bold transition-colors ${!isUserMode ? "bg-white text-green-700 shadow-sm" : "text-green-100"}`}
-            >
-              ADMIN
-            </button>
-            <button
-              onClick={toggleMode}
-              className={`px-3 py-1 rounded text-xs font-bold transition-colors ${isUserMode ? "bg-white text-green-700 shadow-sm" : "text-green-100"}`}
-            >
-              USER
-            </button>
-          </div>
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden relative">
-        {!isUserMode && (
-          <aside
-            className={`absolute inset-0 z-10 md:relative md:inset-auto w-full md:w-80 bg-white border-r border-slate-200 flex flex-col shadow-inner transition-transform duration-300 ${
-              selectedUserId
-                ? "-translate-x-full md:translate-x-0"
-                : "translate-x-0"
-            }`}
-          >
-            <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-              <h2 className="font-bold text-slate-600 uppercase text-xs tracking-wider">
-                Active Chats
-              </h2>
-              <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">
-                {users.length}
-              </span>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {users.length === 0 ? (
-                <div className="p-12 text-center text-slate-400 space-y-3">
-                  <svg
-                    className="w-10 h-10 mx-auto opacity-20"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
-                    />
-                  </svg>
-                  <p className="text-sm">No conversations yet</p>
-                </div>
-              ) : (
-                users.map((user) => (
-                  <SidebarUser
-                    key={user.userId}
-                    user={user}
-                    isSelected={selectedUserId === user.userId}
-                    onSelect={setSelectedUserId}
-                    onDelete={handleDeleteChat}
+        <aside
+          className={`absolute inset-0 z-10 md:relative md:inset-auto w-full md:w-80 bg-white border-r border-slate-200 flex flex-col shadow-inner transition-transform duration-300 ${
+            selectedUserId
+              ? "-translate-x-full md:translate-x-0"
+              : "translate-x-0"
+          }`}
+        >
+          <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+            <h2 className="font-bold text-slate-600 uppercase text-xs tracking-wider">
+              Active Chats
+            </h2>
+            <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">
+              {users.length}
+            </span>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {users.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 space-y-3">
+                <svg
+                  className="w-10 h-10 mx-auto opacity-20"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
                   />
-                ))
-              )}
-            </div>
-          </aside>
-        )}
+                </svg>
+                <p className="text-sm">No conversations yet</p>
+              </div>
+            ) : (
+              users.map((user) => (
+                <SidebarUser
+                  key={user.userId}
+                  user={user}
+                  isSelected={selectedUserId === user.userId}
+                  onSelect={setSelectedUserId}
+                  onDelete={handleDeleteChat}
+                />
+              ))
+            )}
+          </div>
+        </aside>
 
         <main className="flex-1 flex flex-col min-w-0 bg-slate-50">
           {!selectedUserId ? (
@@ -286,15 +245,10 @@ export default function Home() {
             <>
               <ChatWindow
                 messages={activeChatMessages}
-                userName={
-                  isUserMode
-                    ? "WebChat OA (Official)"
-                    : selectedUser?.displayName || "User"
-                }
-                userId={isUserMode ? (defaultUserId || "") : selectedUserId}
+                userName={selectedUser?.displayName || "User"}
+                userId={selectedUserId}
                 onBack={() => setSelectedUserId(null)}
-                showBack={!isUserMode}
-                isUserMode={isUserMode}
+                showBack={true}
               />
               <ChatInput
                 onSendMessage={handleSendMessage}

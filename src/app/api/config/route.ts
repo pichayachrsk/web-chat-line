@@ -1,6 +1,5 @@
-import { ApiResponse } from '@/lib/api-response';
-import { targetUserId } from '@/config/line';
+﻿import { ApiResponse } from '@/lib/api-response';
 
 export async function GET() {
-  return ApiResponse.success({ defaultUserId: targetUserId });
+  return ApiResponse.success({ status: 'ok' });
 }

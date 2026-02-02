@@ -2,13 +2,10 @@ import { Message } from "@/types";
 
 interface ChatBubbleProps {
   message: Message;
-  isUserMode?: boolean;
 }
 
-export function ChatBubble({ message, isUserMode = false }: ChatBubbleProps) {
-  const isRightSide = isUserMode
-    ? message.sender === "line"
-    : message.sender === "user";
+export function ChatBubble({ message }: ChatBubbleProps) {
+  const isRightSide = message.sender === "user";
 
   return (
     <div className={`flex ${isRightSide ? "justify-end" : "justify-start"}`}>

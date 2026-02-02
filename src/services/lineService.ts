@@ -1,5 +1,5 @@
-import { messagingApi, validateSignature, WebhookEvent } from "@line/bot-sdk";
-import { lineConfig, targetUserId } from "@/config/line";
+﻿import { messagingApi, validateSignature, WebhookEvent } from "@line/bot-sdk";
+import { lineConfig } from "@/config/line";
 import { messageService } from "./messageService";
 
 const { MessagingApiClient } = messagingApi;
@@ -21,19 +21,20 @@ class LineService {
     for (const event of events) {
       if (event.type === "message" && event.message.type === "text") {
         const text = event.message.text;
-        const userId = event.source.userId || "unknown";
+        const sourceId = event.source.userId || "unknown";
+        const userIdForProfile = event.source.userId;
         let displayName: string | undefined;
 
         try {
-          if (userId !== "unknown") {
-            const profile = await this.client.getProfile(userId);
+          if (userIdForProfile) {
+            const profile = await this.client.getProfile(userIdForProfile);
             displayName = profile.displayName;
           }
         } catch (error) {
           console.error("Failed to get user profile in webhook:", error);
         }
 
-        await messageService.addMessage("line", text, userId, displayName);
+        await messageService.addMessage("line", text, sourceId, displayName);
       }
     }
   }
@@ -42,30 +43,26 @@ class LineService {
     try {
       return await this.client.getProfile(userId);
     } catch (error) {
-      console.error(`Failed to get profile for ${userId}:`, error);
+      console.error('Failed to get profile for ' + userId, error);
       return null;
     }
   }
 
-  public async sendMessageToUser(text: string, toUserId?: string) {
-    const finalUserId = toUserId || targetUserId;
-
-    if (!finalUserId) {
-      throw new Error(
-        "No target user ID provided and LINE_USER_ID is not configured",
-      );
+  public async sendMessageToUser(text: string, toId: string) {
+    if (!toId) {
+      throw new Error("No target ID provided");
     }
 
     let displayName: string | undefined;
     try {
-      const profile = await this.client.getProfile(finalUserId);
+      const profile = await this.client.getProfile(toId);
       displayName = profile.displayName;
     } catch (error) {
       console.error("Failed to get profile during sendMessage:", error);
     }
 
     await this.client.pushMessage({
-      to: finalUserId,
+      to: toId,
       messages: [
         {
           type: "text",
@@ -74,7 +71,7 @@ class LineService {
       ],
     });
 
-    return await messageService.addMessage("user", text, finalUserId, displayName);
+    return await messageService.addMessage("user", text, toId, displayName);
   }
 }
 
