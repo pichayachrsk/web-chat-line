@@ -13,6 +13,7 @@ export default function Home() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [defaultUserId, setDefaultUserId] = useState<string | null>(null);
   const [isUserMode, setIsUserMode] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   const users = useMemo(() => {
     const userMap: Record<string, UserSession> = {};
@@ -74,6 +75,7 @@ export default function Home() {
 
   useEffect(() => {
     const init = async () => {
+      setIsLoading(true);
       try {
         const [configRes, msgRes] = await Promise.all([
           axios.get(API_ROUTES.CONFIG),
@@ -87,6 +89,8 @@ export default function Home() {
         setMessages(msgRes.data);
       } catch (err) {
         console.error("Initialization failed:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -159,12 +163,25 @@ export default function Home() {
 
   const selectedUser = users.find((u) => u.userId === selectedUserId);
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[100dvh] bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-medium animate-pulse">
+            Loading ...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-[100dvh] bg-slate-50 font-sans antialiased text-slate-900">
       <header className="bg-green-600 text-white px-4 md:px-6 py-3 md:py-4 shadow-lg z-20 flex items-center justify-between">
         <div>
           <h1 className="text-lg md:text-xl font-bold tracking-tight">
-            {isUserMode ? "User Console" : "WebChat Admin Console"}
+            {isUserMode ? "User Console" : "Admin Console"}
           </h1>
           <p className="text-[9px] md:text-[10px] uppercase tracking-widest opacity-70 font-semibold">
             CRM System
