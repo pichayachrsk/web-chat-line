@@ -42,6 +42,7 @@ Create a `.env.local` file in the root directory:
 LINE_CHANNEL_ACCESS_TOKEN=your_access_token
 LINE_CHANNEL_SECRET=your_channel_secret
 DATABASE_URL=file:./drizzle/local.db (or your Turso URL)
+DATABASE_AUTH_TOKEN=your_auth_token (if using Turso)
 ```
 
 ### 4. Database Setup
