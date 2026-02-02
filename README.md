@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LINE Web Chat Console
+
+A comprehensive chat management system for LINE Official Account (OA) that supports both Admin Console and User Simulation (User Mode) in a single interface. Built with Next.js, Drizzle ORM, and LINE Messaging API.
+
+## Key Features
+
+- **Real-time Synchronization**: Powered by Server-Sent Events (SSE) to keep messages in sync across devices without polling.
+- **Dual Simulation Mode**:
+  - **Admin Mode**: Full administrator console to manage active chats and reply via LINE Messaging API.
+  - **User Mode**: Developer-friendly simulation to act as any user (configurable via `LINE_USER_ID`) for testing end-to-end flows.
+- **Automated Profile Fetching**: Automatically retrieves and updates user display names from the LINE Platform.
+- **Persistent Storage**: Robust data management using Drizzle ORM and Turso (Edge SQLite).
+
+## Tech Stack
+
+- **Framework**: [Next.js 15+](https://nextjs.org/) (App Router)
+- **Database**: [Turso](https://turso.tech/) (Edge-ready SQLite)
+- **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
+- **UI & Styling**: Tailwind CSS 4 & Headless UI
+- **API**: [LINE Messaging API SDK](https://github.com/line/line-bot-sdk-nodejs)
+- **Real-time**: Server-Sent Events (SSE)
 
 ## Getting Started
 
-First, run the development server:
+### 1. Prerequisites
+
+- Node.js 18 or higher
+- [LINE Developers](https://developers.line.biz/) account (for Messaging API credentials)
+
+### 2. Installation
+
+```bash
+npm install
+# or
+yarn install
+```
+
+### 3. Environment Configuration
+
+Create a `.env.local` file in the root directory and add the following variables:
+
+```dotenv
+LINE_CHANNEL_ACCESS_TOKEN=your_access_token
+LINE_CHANNEL_SECRET=your_channel_secret
+LINE_USER_ID=your_test_user_id
+DATABASE_URL=libsql://your-db-name-user.turso.io
+DATABASE_AUTH_TOKEN=your_auth_token
+```
+
+### 4. Database Setup
+
+Run the following command to sync your database schema:
+
+```bash
+npx drizzle-kit push
+```
+
+### 5. Running the Application
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `src/app/api/`: API Routes for Webhooks and message management.
+- `src/components/`: UI Components (ChatWindow, Sidebar, ChatBubble).
+- `src/services/`: Business Logic for LINE and Message services.
+- `src/repositories/`: Data Access Layer (Drizzle Repository).
+- `src/config/`: Configuration files (API Paths, LINE Config).
+- `src/lib/`: Helper utilities (e.g., ApiResponse).
 
-## Learn More
+## Usage Guide
 
-To learn more about Next.js, take a look at the following resources:
+- **ADMIN Mode**: Used for actual administration. Replying in this mode sends a real Push Message via the LINE API to the user's device.
+- **USER Mode**: Simulated environment for the user defined in `LINE_USER_ID`. Typing here simulates an incoming message, allowing you to test the console's reception of messages without needing a physical device.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Additional Information
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Webhook URL**: Set this in the LINE Developers Console to `https://your-domain.com/api/webhook`
+- **SSE**: The system utilizes a stream at `/api/messages/stream` to push new events from the server to the client instantly.
 
-## Deploy on Vercel
+## Deployment on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Database**: Create a database on [Turso](https://turso.tech/) and obtain your `DATABASE_URL` and `DATABASE_AUTH_TOKEN`.
+2. **Repository**: Push your code to a private GitHub repository.
+3. **Vercel Setup**:
+   - Import the project into Vercel.
+   - Configure all environment variables listed in `.env.local`.
+4. **Finalize**: Update your **Webhook URL** in the LINE Developers Console with your new Vercel production domain.

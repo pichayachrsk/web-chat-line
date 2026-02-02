@@ -22,7 +22,7 @@ class LineService {
       if (event.type === "message" && event.message.type === "text") {
         const text = event.message.text;
         const userId = event.source.userId || "unknown";
-        let displayName = "Unknown User";
+        let displayName: string | undefined;
 
         try {
           if (userId !== "unknown") {
@@ -30,11 +30,20 @@ class LineService {
             displayName = profile.displayName;
           }
         } catch (error) {
-          console.error("Failed to get user profile:", error);
+          console.error("Failed to get user profile in webhook:", error);
         }
 
         await messageService.addMessage("line", text, userId, displayName);
       }
+    }
+  }
+
+  public async getUserProfile(userId: string) {
+    try {
+      return await this.client.getProfile(userId);
+    } catch (error) {
+      console.error(`Failed to get profile for ${userId}:`, error);
+      return null;
     }
   }
 
@@ -47,6 +56,14 @@ class LineService {
       );
     }
 
+    let displayName: string | undefined;
+    try {
+      const profile = await this.client.getProfile(finalUserId);
+      displayName = profile.displayName;
+    } catch (error) {
+      console.error("Failed to get profile during sendMessage:", error);
+    }
+
     await this.client.pushMessage({
       to: finalUserId,
       messages: [
@@ -57,7 +74,7 @@ class LineService {
       ],
     });
 
-    return await messageService.addMessage("user", text, finalUserId);
+    return await messageService.addMessage("user", text, finalUserId, displayName);
   }
 }
 

@@ -10,7 +10,6 @@ import { API_ROUTES } from "@/config/api";
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [defaultUserId, setDefaultUserId] = useState<string | null>(null);
   const [isUserMode, setIsUserMode] = useState(true);
@@ -54,6 +53,21 @@ export default function Home() {
   const updateMessagesSafely = (newMessage: Message) => {
     setMessages((prev) => {
       if (prev.some((m) => m.id === newMessage.id)) return prev;
+
+      // Check for optimistic message that matches this real message
+      const optimisticIndex = prev.findIndex(
+        (m) =>
+          m.id.startsWith("temp-") &&
+          m.userId === newMessage.userId &&
+          m.text === newMessage.text
+      );
+
+      if (optimisticIndex !== -1) {
+        const next = [...prev];
+        next[optimisticIndex] = newMessage;
+        return next;
+      }
+
       return [...prev, newMessage];
     });
   };
@@ -103,18 +117,31 @@ export default function Home() {
 
   const handleSendMessage = async (text: string) => {
     if (!selectedUserId) return;
-    setLoading(true);
+
+    const optimisticId = `temp-${Date.now()}`;
+    const optimisticMsg: Message = {
+      id: optimisticId,
+      text,
+      userId: selectedUserId,
+      sender: isUserMode ? "line" : "user",
+      timestamp: Date.now(),
+      displayName: isUserMode ? "You" : "Admin",
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+
     try {
       const endpoint = isUserMode
         ? API_ROUTES.RECEIVE_MESSAGE
         : API_ROUTES.SEND_MESSAGE;
       const res = await axios.post(endpoint, { text, userId: selectedUserId });
-      if (res.data.message) updateMessagesSafely(res.data.message);
+      if (res.data.message) {
+        updateMessagesSafely(res.data.message);
+      }
     } catch (err) {
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       console.error("Send failed:", err);
       alert("Failed to send message.");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -254,7 +281,7 @@ export default function Home() {
               />
               <ChatInput
                 onSendMessage={handleSendMessage}
-                isLoading={loading}
+                isLoading={false}
                 disabled={!selectedUserId}
               />
             </>

@@ -4,10 +4,20 @@ import { eq } from "drizzle-orm";
 
 export class UserRepository {
   public static async ensureExists(userId: string, displayName?: string) {
+    const isGenericName = !displayName || displayName === "User" || displayName === "Unknown User";
+    
+    const dataToInsert = {
+      userId,
+      displayName: displayName || "User",
+    };
+
     return db
       .insert(users)
-      .values({ userId, displayName: displayName || "User" })
-      .onConflictDoNothing();
+      .values(dataToInsert)
+      .onConflictDoUpdate({
+        target: users.userId,
+        set: !isGenericName ? { displayName } : {},
+      });
   }
 
   public static async deleteById(userId: string) {

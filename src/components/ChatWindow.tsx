@@ -78,7 +78,7 @@ export function ChatWindow({
                 d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
               />
             </svg>
-            <p>No messages yet with this user</p>
+            <p>No messages yet</p>
           </div>
         ) : (
           messages.map((msg) => (
