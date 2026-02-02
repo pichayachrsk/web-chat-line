@@ -1,4 +1,4 @@
-﻿# LINE Web Chat Console
+﻿# Web Chat Line Console
 
 A real-time chat management system for LINE Official Account (OA) designed for administrators to manage conversations and reply to users directly. Built with Next.js, Drizzle ORM, and LINE Messaging API.
 
