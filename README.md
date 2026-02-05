@@ -4,7 +4,7 @@ A real-time chat management system for LINE Official Account (OA) designed for a
 
 ## Key Features
 
-- **Real-time Synchronization**: Powered by Client-side Polling to keep messages in sync across the dashboard.
+- **Real-time Synchronization**: Powered by **Pusher** for instant messaging updates without page refresh or heavy polling.
 - **Admin Dashboard**: A clean interface to manage active chats, view message history, and send real-time replies.
 - **Direct Messaging**: Sends authentic Push Messages via the LINE Messaging API to users' devices.
 - **Automated Profile Fetching**: Automatically retrieves user display names and profiles from the LINE Platform when they message the account.
@@ -18,7 +18,7 @@ A real-time chat management system for LINE Official Account (OA) designed for a
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
 - **UI & Styling**: Tailwind CSS
 - **API**: [LINE Messaging API SDK](https://github.com/line/line-bot-sdk-nodejs)
-- **Real-time**: Client-side Polling (2s interval)
+- **Real-time**: [Pusher Channels](https://pusher.com/channels)
 
 ## Getting Started
 
@@ -36,13 +36,19 @@ npm install
 
 ### 3. Environment Configuration
 
-Create a `.env.local` file in the root directory:
+Create a `.env` or `.env.local` file in the root directory:
 
 ```dotenv
 LINE_CHANNEL_ACCESS_TOKEN=your_access_token
 LINE_CHANNEL_SECRET=your_channel_secret
-DATABASE_URL=file:./drizzle/local.db (or your Turso URL)
+DATABASE_URL=file:your_Turso_URL
 DATABASE_AUTH_TOKEN=your_auth_token (if using Turso)
+
+# Pusher Credentials
+PUSHER_APP_ID=your_app_id
+NEXT_PUBLIC_PUSHER_KEY=your_key
+PUSHER_SECRET=your_secret
+NEXT_PUBLIC_PUSHER_CLUSTER=your_cluster
 ```
 
 ### 4. Database Setup
@@ -67,7 +73,8 @@ Visit [http://localhost:3000](http://localhost:3000) to access the console.
 - `src/components/`: UI Components for the chat interface.
 - `src/services/`: Business logic for LINE interactions and message handling.
 - `src/repositories/`: Data access layer using Drizzle.
-- `src/config/`: Configuration for API routes and LINE SDK.
+- `src/hooks/`: Custom React hooks (e.g., Pusher real-time logic).
+- `src/config/`: Configuration for API routes, LINE SDK, and Pusher.
 
 ## Webhook Configuration
 
@@ -78,15 +85,11 @@ Visit [http://localhost:3000](http://localhost:3000) to access the console.
 
 ## Additional Information
 
-- **Real-time Sync**: The dashboard polls `/api/messages` every 2 seconds to check for new incoming messages from the Webhook.
+- **Real-time Sync**: The dashboard uses Pusher Channels to listen for `new-message` events on the `chat-channel`.
 - **Administration**: Every message sent from the console is a real Push Message charged against your LINE Messaging API quota.
 
-## Idea for Architecture: Performance & Scalability
+## Architecture: Real-time with Pusher
 
-### 1. Client-side Polling (Current)
-- **Problem**: Vercel Serverless Functions are isolated; Instance A (Webhook) cannot notify Instance B (Dashboard) in memory.
-- **Solution**: Use Client-side Polling. Every new message is written to the DB by the Webhook, and the Admin Dashboard fetches updates every 2 seconds.
-
-### 2. Scaling to Real-time Efficiency
-As the number of concurrent admin users grows, constant DB polling can increase load.
-- Replace polling with a managed Pub/Sub or Message Broker to distribute workloads more efficiently. For example, Worker A Push notifications , Worker B Write messages to DB etc.
+1. **Webhook/API**: New messages are saved to the database.
+2. **Server-side Trigger**: The `MessageService` triggers a Pusher event with the message data.
+3. **Client-side Subscription**: The `useChatRealtime` hook listens for events and updates the UI instantly.
