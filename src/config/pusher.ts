@@ -5,8 +5,14 @@ export const pusherConfig = {
   cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "",
 };
 
-if (!pusherConfig.appId || !pusherConfig.key || !pusherConfig.secret || !pusherConfig.cluster) {
-  console.warn(
-    "Pusher environment variables are missing. Real-time updates will not work.",
-  );
+const isServer = typeof window === "undefined";
+
+if (isServer) {
+  if (!pusherConfig.appId || !pusherConfig.key || !pusherConfig.secret || !pusherConfig.cluster) {
+    console.warn("Pusher Server configuration missing. Real-time broadcast will not work.");
+  }
+} else {
+  if (!pusherConfig.key || !pusherConfig.cluster) {
+    console.warn("Pusher Client configuration missing. Real-time subscription will not work.");
+  }
 }
