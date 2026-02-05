@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
 import { Message, UserSession } from "@/types";
 import { SidebarUser } from "@/components/SidebarUser";
 import { ChatWindow } from "@/components/ChatWindow";
 import { ChatInput } from "@/components/ChatInput";
 import { API_ROUTES } from "@/config/api";
+import { useChatRealtime } from "@/hooks/useChatRealtime";
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -49,7 +50,7 @@ export default function Home() {
     return messages.filter((m) => m.userId === selectedUserId);
   }, [messages, selectedUserId]);
 
-  const updateMessagesSafely = (newMessage: Message) => {
+  const updateMessagesSafely = useCallback((newMessage: Message) => {
     setMessages((prev) => {
       if (prev.some((m) => m.id === newMessage.id)) return prev;
 
@@ -69,7 +70,9 @@ export default function Home() {
 
       return [...prev, newMessage];
     });
-  };
+  }, []);
+
+  useChatRealtime(updateMessagesSafely);
 
   useEffect(() => {
     const init = async () => {
@@ -85,18 +88,6 @@ export default function Home() {
     };
 
     init();
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await axios.get(API_ROUTES.MESSAGES);
-        const newMessages: Message[] = res.data;
-        newMessages.forEach(updateMessagesSafely);
-      } catch (err) {
-        console.error("Polling failed:", err);
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
   }, []);
 
   const handleSendMessage = async (text: string) => {

@@ -1,33 +1,22 @@
 import { Message } from "@/types";
 import { MessageRepository } from "@/repositories/messageRepository";
 import { UserRepository } from "@/repositories/userRepository";
+import Pusher from "pusher";
+import { pusherConfig } from "@/config/pusher";
 
 type MessageListener = (message: Message) => void;
 
 class MessageService {
-  private static instance: MessageService;
-  private listeners: Set<MessageListener> = new Set();
+  private pusher: Pusher;
 
-  private constructor() {}
-
-  public static getInstance(): MessageService {
-    if (process.env.NODE_ENV === "development") {
-      const g = global as any;
-      if (!g.messageServiceInstance) {
-        g.messageServiceInstance = new MessageService();
-      }
-      return g.messageServiceInstance;
-    }
-
-    if (!MessageService.instance) {
-      MessageService.instance = new MessageService();
-    }
-    return MessageService.instance;
-  }
-
-  public subscribe(listener: MessageListener) {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+  constructor() {
+    this.pusher = new Pusher({
+      appId: pusherConfig.appId,
+      key: pusherConfig.key,
+      secret: pusherConfig.secret,
+      cluster: pusherConfig.cluster,
+      useTLS: true,
+    });
   }
 
   public async getMessages(): Promise<Message[]> {
@@ -54,15 +43,13 @@ class MessageService {
     await UserRepository.deleteById(userId);
   }
 
-  private notifyListeners(message: Message) {
-    this.listeners.forEach((listener) => {
-      try {
-        listener(message);
-      } catch (error) {
-        console.error("[MessageService] Error notifying listener:", error);
-      }
-    });
+  private async notifyListeners(message: Message) {
+    try {
+      await this.pusher.trigger("chat-channel", "new-message", message);
+    } catch (error) {
+      console.error("[MessageService] Pusher trigger error:", error);
+    }
   }
 }
 
-export const messageService = MessageService.getInstance();
+export const messageService = new MessageService();
